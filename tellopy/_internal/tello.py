@@ -60,9 +60,10 @@ class Tello(object):
     LOG_DEBUG = logger.LOG_DEBUG
     LOG_ALL = logger.LOG_ALL
 
-    def __init__(self, port=9000, tello_ip='192.168.10.1', cmd_port=8889, vid_port=6038):
+    def __init__(self, net_int="wlan0", port=9000, tello_ip='192.168.10.1', cmd_port=8889, vid_port=6038):
         self.tello_addr = (tello_ip, cmd_port)
-        self.tello_vid_port = vid_port;
+        self.tello_vid_port = vid_port 
+        self.net_int = net_int # net interface
         self.debug = False
         self.pkt_seq_num = 0x01e4
         self.port = port
@@ -99,6 +100,7 @@ class Tello(object):
 
         # Create a UDP socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, 25, self.net_int.encode()); # net interface bind
         self.sock.bind(('', self.port))
         self.sock.settimeout(2.0)
 
@@ -773,10 +775,11 @@ class Tello(object):
         log.info('start video thread')
         # Create a UDP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 512 * 1024) # original line
+        sock.setsockopt(socket.SOL_SOCKET, 25, self.net_int.encode()); # net interface bind
         port = self.tello_vid_port
         sock.bind(('', port))
         sock.settimeout(1.0)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 512 * 1024)
         log.info('video receive buffer size = %d' %
                  sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
 
